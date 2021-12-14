@@ -1,27 +1,42 @@
-use std::io::prelude::*;
-use std::net::TcpListener;
-use std::net::TcpStream;
+use tokio::net::{TcpListener, TcpStream};
 use std::fs;
 use std::thread;
 use std::time::Duration;
-use simplewebserver::ThreadPool;
 
-fn main() {
-    let listener = TcpListener::bind("127.0.0.1:7878").unwrap();
-    let pool = ThreadPool::new(4);
+// fn main() {
+//     let listener = TcpListener::bind("127.0.0.1:7878").unwrap();
+//     let pool = ThreadPool::new(4);
 
-    for stream in listener.incoming() {
-        let stream = stream.unwrap();
+//     for stream in listener.incoming() {
+//         let stream = stream.unwrap();
 
-        pool.execute(|| {
-            handle_connection(stream);
+//         pool.execute(|| {
+//             handle_connection(stream);
+//         });
+//     }
+// }
+
+#[tokio::main]
+async fn main() {
+    // Bind the listener to the address
+    let listener = TcpListener::bind("127.0.0.1:7878").await.unwrap();
+
+    loop {
+        let (socket, _) = listener.accept().await.unwrap();
+        tokio::spawn(async move {
+            handle_connection(socket).await;
         });
     }
 }
 
-fn handle_connection(mut stream: TcpStream) {
-    let mut buffer = [0; 1024];
-    stream.read(&mut buffer).unwrap();
+async fn handle_connection(stream: TcpStream) {
+    stream.readable().await.unwrap();
+    
+    let mut buffer = [0; 4096];
+
+    // TODO: better error handling, especially on would_block errors
+    // should retry if try_read or write results in that error
+    stream.try_read(&mut buffer).unwrap();
 
     let get = b"GET / HTTP/1.1\r\n";
     let sleep = b"GET /sleep HTTP/1.1\r\n";
@@ -44,6 +59,7 @@ fn handle_connection(mut stream: TcpStream) {
         contents
     );
 
-    stream.write(response.as_bytes()).unwrap();
-    stream.flush().unwrap();
+    stream.writable().await.unwrap();
+
+    stream.try_write(response.as_bytes()).unwrap();
 }
