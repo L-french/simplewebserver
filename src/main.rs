@@ -1,24 +1,12 @@
-use tokio::net::{TcpListener, TcpStream};
 use std::fs;
 use std::thread;
 use std::time::Duration;
+use tokio::net::{TcpListener, TcpStream};
 
-// fn main() {
-//     let listener = TcpListener::bind("127.0.0.1:7878").unwrap();
-//     let pool = ThreadPool::new(4);
-
-//     for stream in listener.incoming() {
-//         let stream = stream.unwrap();
-
-//         pool.execute(|| {
-//             handle_connection(stream);
-//         });
-//     }
-// }
-
+// could be single-threaded and still leverage tokio with rt-single-thread?
+// would come with slight benefit to binary size and cpu usage
 #[tokio::main]
 async fn main() {
-    // Bind the listener to the address
     let listener = TcpListener::bind("127.0.0.1:7878").await.unwrap();
 
     loop {
@@ -31,7 +19,7 @@ async fn main() {
 
 async fn handle_connection(stream: TcpStream) {
     stream.readable().await.unwrap();
-    
+
     let mut buffer = [0; 4096];
 
     // TODO: better error handling, especially on would_block errors
@@ -50,6 +38,7 @@ async fn handle_connection(stream: TcpStream) {
         ("HTTP/1.1 404 NOT FOUND", "404.html")
     };
 
+    // use tokio's async versions of fs operations?
     let contents = fs::read_to_string(filename).unwrap();
 
     let response = format!(
