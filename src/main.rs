@@ -1,54 +1,47 @@
+use hyper::server::conn::Http;
+use hyper::service::service_fn;
+use hyper::{Request, Response, Body};
+use std::error::Error;
 use std::fs;
 use std::thread;
 use std::time::Duration;
-use tokio::net::{TcpListener, TcpStream};
+use tokio::net::TcpListener;
 
 // could be single-threaded and still leverage tokio with rt-single-thread?
 // would come with slight benefit to binary size and cpu usage
 #[tokio::main]
-async fn main() {
-    let listener = TcpListener::bind("127.0.0.1:7878").await.unwrap();
+async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
+    let listener = TcpListener::bind("127.0.0.1:7878").await?;
 
     loop {
-        let (socket, _) = listener.accept().await.unwrap();
+        let (socket, _) = listener.accept().await?;
         tokio::spawn(async move {
-            handle_connection(socket).await;
+            if let Err(http_err) = Http::new()
+                .http1_only(true)
+                .http1_keep_alive(true)
+                .serve_connection(socket, service_fn(handle_connection))
+                .await
+            {
+                eprintln!("Error while serving HTTP connection: {}", http_err);
+            }
         });
     }
 }
 
-async fn handle_connection(stream: TcpStream) {
-    stream.readable().await.unwrap();
-
-    let mut buffer = [0; 4096];
-
-    // TODO: better error handling, especially on would_block errors
-    // should retry if try_read or write results in that error
-    stream.try_read(&mut buffer).unwrap();
-
-    let get = b"GET / HTTP/1.1\r\n";
-    let sleep = b"GET /sleep HTTP/1.1\r\n";
-
-    let (status_line, filename) = if buffer.starts_with(get) {
-        ("HTTP/1.1 200 OK", "test.html")
-    } else if buffer.starts_with(sleep) {
-        thread::sleep(Duration::from_secs(5));
-        ("HTTP/1.1 200 OK", "test.html")
-    } else {
-        ("HTTP/1.1 404 NOT FOUND", "404.html")
+async fn handle_connection(
+    req: Request<Body>,
+) -> Result<Response<Body>, Box<dyn Error + Send + Sync>> {
+    let filename = match req.uri().path() {
+        "/" => "test.html",
+        "/sleep" => {
+            thread::sleep(Duration::from_secs(5));
+            "test.html"
+        }
+        _ => "404.html",
     };
 
     // use tokio's async versions of fs operations?
     let contents = fs::read_to_string(filename).unwrap();
 
-    let response = format!(
-        "{}\r\nContent-Length: {}\r\n\r\n{}",
-        status_line,
-        contents.len(),
-        contents
-    );
-
-    stream.writable().await.unwrap();
-
-    stream.try_write(response.as_bytes()).unwrap();
+    Ok(Response::new(Body::from(contents)))
 }
