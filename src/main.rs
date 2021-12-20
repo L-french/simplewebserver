@@ -29,7 +29,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 async fn handle_connection(
     req: Request<Body>,
 ) -> Result<Response<Body>, Box<dyn Error + Send + Sync>> {
-    let served_files = vec!["test.html"];
+    let served_files = vec!["test.html", "test.zip"];
     // todo: error handling
     let path = req.uri().path().strip_prefix("/").unwrap();
     let response_path = if served_files.contains(&path) {
@@ -39,7 +39,7 @@ async fn handle_connection(
     };
 
     // use tokio's async versions of fs operations?
-    let contents = fs::read_to_string(response_path)?;
+    let contents = fs::read(response_path)?;
 
     Ok(Response::new(Body::from(contents)))
 }
