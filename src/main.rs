@@ -1,10 +1,8 @@
 use hyper::server::conn::Http;
 use hyper::service::service_fn;
-use hyper::{Request, Response, Body};
+use hyper::{Body, Request, Response};
 use std::error::Error;
 use std::fs;
-use std::thread;
-use std::time::Duration;
 use tokio::net::TcpListener;
 
 // could be single-threaded and still leverage tokio with rt-single-thread?
@@ -31,17 +29,17 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 async fn handle_connection(
     req: Request<Body>,
 ) -> Result<Response<Body>, Box<dyn Error + Send + Sync>> {
-    let filename = match req.uri().path() {
-        "/" => "test.html",
-        "/sleep" => {
-            thread::sleep(Duration::from_secs(5));
-            "test.html"
-        }
-        _ => "404.html",
+    let served_files = vec!["test.html"];
+    // todo: error handling
+    let path = req.uri().path().strip_prefix("/").unwrap();
+    let response_path = if served_files.contains(&path) {
+        path
+    } else {
+        "404.html"
     };
 
     // use tokio's async versions of fs operations?
-    let contents = fs::read_to_string(filename).unwrap();
+    let contents = fs::read_to_string(response_path)?;
 
     Ok(Response::new(Body::from(contents)))
 }
