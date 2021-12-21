@@ -2,7 +2,7 @@ use hyper::server::conn::Http;
 use hyper::service::service_fn;
 use hyper::{Body, Request, Response};
 use std::error::Error;
-use std::fs;
+use tokio::fs;
 use tokio::net::TcpListener;
 
 // could be single-threaded and still leverage tokio with rt-single-thread?
@@ -38,8 +38,7 @@ async fn handle_connection(
         "404.html"
     };
 
-    // use tokio's async versions of fs operations?
-    let contents = fs::read(response_path)?;
+    let contents = fs::read(response_path).await?;
 
     Ok(Response::new(Body::from(contents)))
 }
