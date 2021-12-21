@@ -1,9 +1,9 @@
-use tokio::fs;
 use clap::{crate_description, crate_version, App, Arg};
 use hyper::service::{make_service_fn, service_fn};
 use hyper::{Body, Error, Request, Response, Server};
 use std::process;
 use std::sync::Arc;
+use tokio::fs;
 
 // could be single-threaded and still leverage tokio with rt-single-thread?
 // would come with slight benefit to binary size and cpu usage
