@@ -1,5 +1,5 @@
 use clap::{crate_description, crate_name, crate_version, App, Arg, Values};
-use std::{collections::HashSet, process};
+use std::{collections::HashSet, process, fs::read_dir};
 
 pub struct Config {
     pub files: HashSet<String>,
@@ -37,7 +37,7 @@ impl Config {
         let files = get_files(
             matches.values_of("files").unwrap(),
             &matches.is_present("recursive"),
-        );
+        ).unwrap(); //TODO: error handling
 
         if files.is_empty() {
             eprintln!("No files to serve!\n");
@@ -58,23 +58,27 @@ impl Config {
     }
 }
 
-fn get_files(paths: Values, recursive: &bool) -> HashSet<String> {
+fn get_files(paths: Values, recursive: &bool) -> std::io::Result<HashSet<String>> {
     let mut files = HashSet::new();
 
     for path in paths {
         // this uses std filesystem operations. could use tokio?
-        if let Ok(meta) = std::fs::metadata(path) {
-            if meta.is_file() {
-                // could use &str?
-                files.insert(String::from(path));
-            } else if meta.is_dir() && *recursive {
-                // TODO: use generics to handle recursion? could implement get_files over any iterator over strings
-                // alternately, could do a pass before this loop to expand directories into list of files
+        let meta = std::fs::metadata(path)?;
+        if meta.is_file() {
+            // could use &str?
+            files.insert(String::from(path));
+        } else if meta.is_dir() && *recursive {
+            // TODO: use generics to handle recursion? could implement get_files over any iterator over strings
+            // alternately, could do a pass before this loop to expand directories into list of files
+            for entry in read_dir(path)? {
+                // TODO: test for handling nested directories
+                match entry?.path().to_str() {
+                    Some(file) => {files.insert(String::from(file));},
+                    None => eprintln!("Failed to extract file from recursion"),
+                }
             }
-        } else {
-            eprintln!("Failed to obtain file {}", path)
         }
     }
 
-    files
+    Ok(files)
 }
