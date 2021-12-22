@@ -74,7 +74,11 @@ fn get_files(paths: Values, recursive: &bool) -> std::io::Result<HashSet<String>
                 // TODO: test for handling nested directories
                 match entry?.path().to_str() {
                     Some(file) => {files.insert(String::from(file));},
+<<<<<<< HEAD
                     None => eprintln!("Failed to extract files from recursion"),
+=======
+                    None => eprintln!("Failed to extract file from recursion"),
+>>>>>>> 432910a3c964a6c61e4d10eed12527d860c5de98
                 }
             }
         }
