@@ -1,91 +1,80 @@
-// use std::thread;
-// use std::sync::{Arc, Mutex, mpsc};
+use clap::{crate_description, crate_name, crate_version, App, Arg, Values};
+use std::{collections::HashSet, process};
 
-// pub struct ThreadPool {
-//     workers: Vec<Worker>,
-//     sender: mpsc::Sender<Message>,
-// }
+pub struct Config {
+    pub files: HashSet<String>,
+    pub port: u16,
+}
 
-// impl ThreadPool {
-//     pub fn new(size: usize) -> ThreadPool {
-//         assert!(size > 0);
+impl Config {
+    pub fn new() -> Config {
+        let matches = App::new(crate_name!())
+            .version(crate_version!())
+            .about(crate_description!())
+            .arg(
+                Arg::with_name("recursive")
+                    .short("r")
+                    .long("recursive")
+                    .help("Serve directories recursively"),
+            )
+            .arg(
+                Arg::with_name("port")
+                    .short("p")
+                    .long("port")
+                    .help("Bind to a port")
+                    .default_value("7878"),
+            )
+            .arg(
+                Arg::with_name("files")
+                    .takes_value(true)
+                    .required(true)
+                    .multiple(true)
+                    .value_name("FILE")
+                    .help("The file(s) to serve"),
+            )
+            .get_matches();
 
-//         let (sender, receiver) = mpsc::channel();
+        let files = get_files(
+            matches.values_of("files").unwrap(),
+            &matches.is_present("recursive"),
+        );
 
-//         let receiver = Arc::new(Mutex::new(receiver));
+        if files.is_empty() {
+            eprintln!("No files to serve!\n");
+            // eprintln!("{}", matches.usage());
+            process::exit(1);
+        }
 
-//         let mut workers = Vec::with_capacity(size);
+        let port: u16 = match matches.value_of("port").unwrap().parse() {
+            Ok(port) => port,
+            // default should always be provided by clap
+            Err(_) => unreachable!(),
+        };
 
-//         for id in 0..size {
-//             workers.push(Worker::new(id, Arc::clone(&receiver)));
-//         }
+        Config {
+            files,
+            port,
+        }
+    }
+}
 
-//         ThreadPool { workers, sender }
-//     }
+fn get_files(paths: Values, recursive: &bool) -> HashSet<String> {
+    let mut files = HashSet::new();
 
-//     pub fn execute<F>(&self, f: F)
-//     where
-//         F: FnOnce() + Send + 'static,
-//     {
-//         let job = Box::new(f);
-//         self.sender.send(Message::NewJob(job)).unwrap();
-//     }
-// }
+    for path in paths {
+        // this uses std filesystem operations. could use tokio?
+        if let Ok(meta) = std::fs::metadata(path) {
+            if meta.is_file() {
+                // could use &str?
+                files.insert(String::from(path));
+            } else if meta.is_dir() && *recursive {
+                // TODO: use generics to handle recursion? could implement get_files over any iterator over strings
+                // alternately, could do a pass before this loop to expand directories into list of files
+            }
+        } else {
+            eprintln!("Failed to obtain file {}", path)
+        }
+    }
 
-// impl Drop for ThreadPool {
-//     fn drop(&mut self) {
-//         println!("Sending terminate message to all workers.");
-
-//         for _ in &self.workers {
-//             self.sender.send(Message::Terminate).unwrap();
-//         }
-
-//         println!("Shutting down all workers.");
-
-//         for worker in &mut self.workers {
-//             println!("Shutting down worker {}", worker.id);
-
-//             if let Some(thread) = worker.thread.take() {
-//                 thread.join().unwrap();
-//             }
-//         }
-//     }
-// }
-
-// type Job = Box<dyn FnOnce() + Send + 'static>;
-
-// enum Message {
-//     NewJob(Job),
-//     Terminate,
-// }
-
-// struct Worker {
-//     id: usize,
-//     thread: Option<thread::JoinHandle<()>>,
-// }
-
-// impl Worker {
-//     fn new(id: usize, receiver: Arc<Mutex<mpsc::Receiver<Message>>>) -> Worker {
-//         let thread = thread::spawn(move || loop {
-//             let message = receiver.lock().unwrap().recv().unwrap();
-
-//             match message {
-//                 Message::NewJob(job) => {
-//                     println!("Worker {} got a job; executing.", id);
-
-//                     job();
-//                 }
-//                 Message::Terminate => {
-//                     println!("Worker {} was told to terminate.", id);
-
-//                     break;
-//                 }
-//             }
-//         });
-
-//         Worker {
-//             id,
-//             thread: Some(thread)
-//         }
-//     }
-// }
+    files
+}
