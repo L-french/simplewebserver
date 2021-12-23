@@ -12,9 +12,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     // Clap definitions
     let conf = Config::new();
 
-    let served_files = Arc::new(conf.files);
+    // Print debug info and quit if it's a dry run
+    if conf.dry_run {
+        println!("FILES: {:?}", conf.files);
+        return Ok(())
+    }
 
     // Initialize server
+    let served_files = Arc::new(conf.files);
+
     let make_svc = make_service_fn(|_conn| {
         let served_files = served_files.clone();
         async move {

@@ -4,6 +4,7 @@ use std::{collections::HashSet, process, fs::read_dir};
 pub struct Config {
     pub files: HashSet<String>,
     pub port: u16,
+    pub dry_run: bool,
 }
 
 impl Config {
@@ -16,6 +17,12 @@ impl Config {
                     .short("r")
                     .long("recursive")
                     .help("Serve directories recursively"),
+            )
+            .arg(
+                Arg::with_name("dry run")
+                    .short("d")
+                    .long("dry-run")
+                    .help("Print files which would be served and exit"),
             )
             .arg(
                 Arg::with_name("port")
@@ -51,9 +58,12 @@ impl Config {
             Err(_) => unreachable!(),
         };
 
+        let dry_run = matches.is_present("dry run");
+
         Config {
             files,
             port,
+            dry_run
         }
     }
 }
@@ -81,4 +91,14 @@ fn get_files(paths: Values, recursive: &bool) -> std::io::Result<HashSet<String>
     }
 
     Ok(files)
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn ex_unit() {
+
+    }
 }

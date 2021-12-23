@@ -9,3 +9,6 @@ edition = "2021"
 tokio = {version = "1", features = ["net", "macros", "rt-multi-thread", "fs"]}
 hyper = {version = "0.14", features = ["server", "http1", "http2", "tcp"]}
 clap = "2"
+
+[dev-dependencies]
+assert_cmd = "2.0"
