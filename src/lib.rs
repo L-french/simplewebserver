@@ -1,5 +1,9 @@
 use clap::{crate_description, crate_name, crate_version, App, Arg, Values};
-use std::{collections::HashSet, process, fs::read_dir};
+use std::error;
+use std::fs::{metadata, read_dir};
+use std::io;
+use std::path::Path;
+use std::{collections::HashSet, process};
 
 pub struct Config {
     pub files: HashSet<String>,
@@ -44,7 +48,8 @@ impl Config {
         let files = get_files(
             matches.values_of("files").unwrap(),
             &matches.is_present("recursive"),
-        ).unwrap(); //TODO: error handling
+        )
+        .unwrap(); //TODO: error handling
 
         if files.is_empty() {
             eprintln!("No files to serve!\n");
@@ -63,29 +68,29 @@ impl Config {
         Config {
             files,
             port,
-            dry_run
+            dry_run,
         }
     }
 }
 
-fn get_files(paths: Values, recursive: &bool) -> std::io::Result<HashSet<String>> {
+fn get_files(paths: Values, recursive: &bool) -> io::Result<HashSet<String>> {
     let mut files = HashSet::new();
 
     for path in paths {
         // this uses std filesystem operations. could use tokio?
-        let meta = std::fs::metadata(path)?;
+        let meta = metadata(path)?;
         if meta.is_file() {
             // could use &str?
-            files.insert(String::from(path));
-        } else if meta.is_dir() && *recursive {
-            // TODO: use generics to handle recursion? could implement get_files over any iterator over strings
-            // alternately, could do a pass before this loop to expand directories into list of files
-            for entry in read_dir(path)? {
-                // TODO: test for handling nested directories
-                match entry?.path().to_str() {
-                    Some(file) => {files.insert(String::from(file));},
-                    None => eprintln!("Failed to extract files from recursion"),
+            match get_file_path(Path::new(&path)) {
+                Ok(file) => {
+                    files.insert(file);
+                    ()
                 }
+                Err(err) => eprintln!("Failed to access file: {}", err),
+            }
+        } else if meta.is_dir() && *recursive {
+            for file in get_directory_recursive(Path::new(&path)) {
+                files.insert(file);
             }
         }
     }
@@ -93,12 +98,54 @@ fn get_files(paths: Values, recursive: &bool) -> std::io::Result<HashSet<String>
     Ok(files)
 }
 
+fn get_file_path(path: &Path) -> Result<String, Box<dyn error::Error>> {
+    // TODO: add tests for correct path stripping
+    let cwd = Path::new("./").canonicalize()?;
+    let canonical = path.canonicalize()?;
+    let stripped_path = canonical.strip_prefix(cwd)?.to_str();
+
+    match stripped_path {
+        Some(str) => Ok(String::from(str)),
+        None => Err(Box::new(io::Error::new(
+            io::ErrorKind::Other,
+            "Failed to convert path to UTF-8",
+        ))),
+    }
+}
+
+fn get_directory_recursive(path: &Path) -> HashSet<String> {
+    let mut files = HashSet::new();
+
+    // TODO: more sophisticated error handling
+    if let Ok(entries) = read_dir(path) {
+        for entry in entries {
+            if let Ok(entry) = entry {
+                if let Ok(meta) = entry.metadata() {
+                    if meta.is_file() {
+                        match get_file_path(&entry.path()) {
+                            Ok(file) => {
+                                files.insert(file);
+                                ()
+                            }
+                            Err(err) => eprintln!("Failed to access file: {}", err),
+                        }
+                    } else if meta.is_dir() {
+                        for file in get_directory_recursive(&entry.path()) {
+                            files.insert(file);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    files
+}
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    fn ex_unit() {
-
-    }
+    #[test]
+    fn ex_unit() {}
 }

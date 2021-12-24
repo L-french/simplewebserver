@@ -1,15 +1,15 @@
 use hyper::service::{make_service_fn, service_fn};
 use hyper::{Body, Error, Request, Response, Server};
+use simplewebserver::Config;
 use std::collections::HashSet;
 use std::sync::Arc;
 use tokio::fs;
-use simplewebserver::Config;
 
 // could be single-threaded and still leverage tokio with rt-single-thread?
 // would come with slight benefit to binary size and resource usage
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    // Clap definitions
+    // Get CLI information
     let conf = Config::new();
 
     // Print debug info and quit if it's a dry run
@@ -18,7 +18,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         // sort for consistency in cli integration tests
         files.sort_unstable();
         println!("FILES: {:?}", files);
-        return Ok(())
+        return Ok(());
     }
 
     // Initialize server

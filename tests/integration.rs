@@ -1,5 +1,5 @@
-use simplewebserver;
 use assert_cmd::Command;
+use simplewebserver;
 
 #[test]
 fn serve_two_files() {
@@ -40,5 +40,5 @@ fn serve_nested_directory() {
         .arg("-r")
         .arg("./")
         .assert()
-        .stdout("FILES: [\"file2-1.txt\", \"dir3/file3-1.txt\"]\n");
+        .stdout("FILES: [\"dir3/file3-1.txt\", \"file2-1.txt\"]\n");
 }
