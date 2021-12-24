@@ -6,7 +6,7 @@ use tokio::fs;
 use simplewebserver::Config;
 
 // could be single-threaded and still leverage tokio with rt-single-thread?
-// would come with slight benefit to binary size and cpu usage
+// would come with slight benefit to binary size and resource usage
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     // Clap definitions
@@ -14,7 +14,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
     // Print debug info and quit if it's a dry run
     if conf.dry_run {
-        println!("FILES: {:?}", conf.files);
+        let mut files: Vec<&String> = conf.files.iter().collect();
+        // sort for consistency in cli integration tests
+        files.sort_unstable();
+        println!("FILES: {:?}", files);
         return Ok(())
     }
 

@@ -20,7 +20,7 @@ impl Config {
             )
             .arg(
                 Arg::with_name("dry run")
-                    .short("d")
+                    .short("D")
                     .long("dry-run")
                     .help("Print files which would be served and exit"),
             )
