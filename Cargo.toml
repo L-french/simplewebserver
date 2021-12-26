@@ -9,9 +9,11 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-tokio = {version = "1", features = ["net", "macros", "rt-multi-thread", "fs"]}
-hyper = {version = "0.14", features = ["server", "http1", "http2", "tcp"]}
+tokio = {version = "1", default-features = false, features = ["net", "macros", "rt-multi-thread", "fs"]}
+hyper = {version = "0.14", default-features = false, features = ["server", "http1", "http2", "tcp"]}
 clap = "2"
+log = "^0.4"
+flexi_logger = {version = "0.22.0", default-features = false, features = ["colors"]}
 
 [dev-dependencies]
 assert_cmd = "2.0"

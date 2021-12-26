@@ -1,4 +1,5 @@
 use clap::{crate_description, crate_name, crate_version, App, Arg, Values};
+use log::{debug, error, info};
 use std::error;
 use std::fs::{metadata, read_dir};
 use std::io;
@@ -8,6 +9,7 @@ use std::{collections::HashSet, process};
 pub struct Config {
     pub files: HashSet<String>,
     pub port: u16,
+    pub verbose: bool,
     pub dry_run: bool,
 }
 
@@ -36,6 +38,12 @@ impl Config {
                     .default_value("7878"),
             )
             .arg(
+                Arg::with_name("verbosity")
+                    .short("v")
+                    .long("verbose")
+                    .help("Print additional logging info"),
+            )
+            .arg(
                 Arg::with_name("files")
                     .takes_value(true)
                     .required(true)
@@ -52,7 +60,7 @@ impl Config {
         .unwrap(); //TODO: error handling
 
         if files.is_empty() {
-            eprintln!("No files to serve!\n");
+            eprintln!("No files to serve! Exiting...");
             // eprintln!("{}", matches.usage());
             process::exit(1);
         }
@@ -63,11 +71,14 @@ impl Config {
             Err(_) => unreachable!(),
         };
 
+        let verbose = matches.is_present("verbose");
+
         let dry_run = matches.is_present("dry run");
 
         Config {
             files,
             port,
+            verbose,
             dry_run,
         }
     }
@@ -117,6 +128,7 @@ fn get_directory_recursive(path: &Path) -> HashSet<String> {
     let mut files = HashSet::new();
 
     // TODO: more sophisticated error handling
+    // most plausible path is converting function to -> Result<HashSet<String>, err>
     if let Ok(entries) = read_dir(path) {
         for entry in entries {
             if let Ok(entry) = entry {
@@ -127,7 +139,7 @@ fn get_directory_recursive(path: &Path) -> HashSet<String> {
                                 files.insert(file);
                                 ()
                             }
-                            Err(err) => eprintln!("Failed to access file: {}", err),
+                            Err(err) => error!("Failed to access file: {}", err),
                         }
                     } else if meta.is_dir() {
                         for file in get_directory_recursive(&entry.path()) {
