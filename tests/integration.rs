@@ -1,5 +1,4 @@
 use assert_cmd::Command;
-use simplewebserver;
 
 #[test]
 fn serve_two_files() {

@@ -1,5 +1,5 @@
 use clap::{crate_description, crate_name, crate_version, App, Arg, Values};
-use log::{debug, error, info};
+use log::error;
 use std::error;
 use std::fs::{metadata, read_dir};
 use std::io;

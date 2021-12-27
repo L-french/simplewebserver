@@ -1,4 +1,3 @@
-use std::error;
 pub const DEFAULT_404: &str = "<!DOCTYPE html>
 <html lang=\"en\">
   <head>

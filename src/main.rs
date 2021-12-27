@@ -1,9 +1,8 @@
 use flexi_logger;
 use hyper::service::{make_service_fn, service_fn};
 use hyper::{Body, Error, Request, Response, Server};
-use log::{debug, error, info, warn};
+use log::{info, warn};
 use simplewebserver::{Config, util};
-use std::collections::HashSet;
 use std::sync::Arc;
 use tokio::fs;
 
