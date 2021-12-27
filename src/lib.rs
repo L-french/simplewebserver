@@ -180,3 +180,14 @@ fn get_directory_recursive(path: &Path) -> HashSet<String> {
 
     files
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn relative_paths() {
+        let testfile = get_file_path(Path::new("./tests/test.html")).unwrap();
+        assert_eq!(testfile, "tests/test.html");
+    }
+}
