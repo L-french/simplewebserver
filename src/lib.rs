@@ -3,12 +3,16 @@ use log::{debug, error, info};
 use std::error;
 use std::fs::{metadata, read_dir};
 use std::io;
+use std::net::IpAddr;
 use std::path::Path;
 use std::{collections::HashSet, process};
+
+pub mod util;
 
 pub struct Config {
     pub files: HashSet<String>,
     pub port: u16,
+    pub address: IpAddr,
     pub verbose: bool,
     pub dry_run: bool,
 }
@@ -38,6 +42,13 @@ impl Config {
                     .default_value("7878"),
             )
             .arg(
+                Arg::with_name("address")
+                    .short("a")
+                    .long("address")
+                    .help("Serve on IP address")
+                    .default_value("127.0.0.1"),
+            )
+            .arg(
                 Arg::with_name("verbosity")
                     .short("v")
                     .long("verbose")
@@ -53,22 +64,38 @@ impl Config {
             )
             .get_matches();
 
-        let files = get_files(
+        let files =  match get_files(
             matches.values_of("files").unwrap(),
             &matches.is_present("recursive"),
-        )
-        .unwrap(); //TODO: error handling
+        ) {
+            Ok(files) => files,
+            Err(err) => {
+                eprint!("Error parsing files!\n{:?}", err);
+                process::exit(1);
+            }
+        };
 
         if files.is_empty() {
             eprintln!("No files to serve! Exiting...");
-            // eprintln!("{}", matches.usage());
             process::exit(1);
         }
 
+        // default should always be provided by clap
         let port: u16 = match matches.value_of("port").unwrap().parse() {
             Ok(port) => port,
-            // default should always be provided by clap
-            Err(_) => unreachable!(),
+            Err(err) => {
+                eprint!("Error parsing port number! Exiting...\n{:?}", err);
+                process::exit(1);
+            },
+        };
+
+        // default should always be provided by clap
+        let address: IpAddr = match matches.value_of("address").unwrap().parse::<IpAddr>() {
+            Ok(addr) => addr,
+            Err(err) => {
+                eprint!("Error parsing ip address! Exiting...\n{:?}", err);
+                process::exit(1);
+            },
         };
 
         let verbose = matches.is_present("verbose");
@@ -78,6 +105,7 @@ impl Config {
         Config {
             files,
             port,
+            address,
             verbose,
             dry_run,
         }

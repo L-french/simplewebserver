@@ -1,8 +1,8 @@
 use flexi_logger;
 use hyper::service::{make_service_fn, service_fn};
 use hyper::{Body, Error, Request, Response, Server};
-use log::{debug, error, info};
-use simplewebserver::Config;
+use log::{debug, error, info, warn};
+use simplewebserver::{Config, util};
 use std::collections::HashSet;
 use std::sync::Arc;
 use tokio::fs;
@@ -36,28 +36,28 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     logger.parse_new_spec(verbosity)?;
 
     // Initialize server
-    let served_files = Arc::new(conf.files);
+    let conf = Arc::new(conf);
 
     info!("Starting Server...");
 
     let make_svc = make_service_fn(|_conn| {
-        let served_files = served_files.clone();
+        let conf = conf.clone();
         async move {
             Ok::<_, Error>(service_fn(move |req| {
-                let served_files = served_files.clone();
-                handle_connection(served_files, req)
+                let conf = conf.clone();
+                handle_connection(conf, req)
             }))
         }
     });
 
-    let addr = ([127, 0, 0, 1], conf.port).into();
+    let addr = (conf.address, conf.port).into();
     let server = Server::bind(&addr).serve(make_svc);
 
     info!(
         "Serving {} file(s) on {} port {}",
-        served_files.len(),
-        "127.0.0.1",
-        &conf.port
+        conf.files.len(),
+        addr.ip(),
+        addr.port(),
     );
 
     server.await?;
@@ -66,22 +66,30 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 }
 
 async fn handle_connection(
-    files: Arc<HashSet<String>>,
+    conf: Arc<Config>,
     req: Request<Body>,
 ) -> Result<Response<Body>, Box<dyn std::error::Error + Send + Sync>> {
-    // TODO: error handling
-    let path = req.uri().path().strip_prefix("/").unwrap();
-
-    info!("Recived request from {} for {}", "TODO", path);
-
-    let response_path = if files.contains(&String::from(path)) {
-        path
-    } else {
-        "404.html"
+    let path = match req.uri().path().strip_prefix("/") {
+        Some(str) => {
+            if conf.files.contains(&String::from(str)) {
+                info!("Recived request for {}", str);
+                Some(str)
+            } else {
+                warn!("Recived request for invalid file {}", str);
+                None
+            }
+        }
+        None => {
+            warn!("Recievd bad request");
+            None
+        }
     };
 
-    // TODO: replace ? with match for logging
-    let contents = fs::read(response_path).await?;
-
-    Ok(Response::new(Body::from(contents)))
+    match path {
+        Some(path) => {
+            let contents = fs::read(path).await?;
+            return Ok(Response::new(Body::from(contents)))
+        },
+        None => return Ok(Response::new(Body::from(util::DEFAULT_404)))
+    }
 }
