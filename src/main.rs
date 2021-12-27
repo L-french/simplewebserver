@@ -1,8 +1,8 @@
 use flexi_logger;
 use hyper::service::{make_service_fn, service_fn};
-use hyper::{Body, Error, Request, Response, Server};
+use hyper::{Body, Error, Request, Response, Server, StatusCode};
 use log::{info, warn};
-use simplewebserver::{Config, util};
+use simplewebserver::{util, Config};
 use std::sync::Arc;
 use tokio::fs;
 
@@ -87,8 +87,13 @@ async fn handle_connection(
     match path {
         Some(path) => {
             let contents = fs::read(path).await?;
-            return Ok(Response::new(Body::from(contents)))
-        },
-        None => return Ok(Response::new(Body::from(util::DEFAULT_404)))
+            return Ok(Response::new(Body::from(contents)));
+        }
+        None => {
+            return Ok(Response::builder()
+                .status(StatusCode::NOT_FOUND)
+                .body(Body::from(util::DEFAULT_404))
+                .unwrap())
+        }
     }
 }

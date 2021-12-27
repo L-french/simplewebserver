@@ -64,7 +64,7 @@ impl Config {
             )
             .get_matches();
 
-        let files =  match get_files(
+        let files = match get_files(
             matches.values_of("files").unwrap(),
             &matches.is_present("recursive"),
         ) {
@@ -86,7 +86,7 @@ impl Config {
             Err(err) => {
                 eprint!("Error parsing port number! Exiting...\n{:?}", err);
                 process::exit(1);
-            },
+            }
         };
 
         // default should always be provided by clap
@@ -95,7 +95,7 @@ impl Config {
             Err(err) => {
                 eprint!("Error parsing ip address! Exiting...\n{:?}", err);
                 process::exit(1);
-            },
+            }
         };
 
         let verbose = matches.is_present("verbose");
@@ -119,7 +119,6 @@ fn get_files(paths: Values, recursive: &bool) -> io::Result<HashSet<String>> {
         // this uses std filesystem operations. could use tokio?
         let meta = metadata(path)?;
         if meta.is_file() {
-            // could use &str?
             match get_file_path(Path::new(&path)) {
                 Ok(file) => {
                     files.insert(file);
@@ -180,12 +179,4 @@ fn get_directory_recursive(path: &Path) -> HashSet<String> {
     }
 
     files
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn ex_unit() {}
 }
