@@ -5,6 +5,7 @@ name: Packaging
 on:
   release:
     types: [created]
+  workflow-dispatch:
 
 jobs:
 
