@@ -2,7 +2,14 @@
 
 A convenient, standalone web server in the style of Python's `SimpleHTTPServer`. 
 
-*Warning*: Like its Python cousin, simplewebserver is intended for development and testing. It should not be used in production environments.
+<center>
+<video width="600" height="200" autoplay loop>
+  <source type="video/webm" src="assets/example-1.webm"></source>
+  <p>Example usage of simplewebserver</p>
+</video>
+</center>
+
+*Warning*: Like its Python cousin, simplewebserver is intended for development and local file sharing. It should not be used in production environments.
 
 ## Design Goals
 * **Simple**: Easy to use CLI, with good defaults and reasonable security
@@ -11,7 +18,13 @@ A convenient, standalone web server in the style of Python's `SimpleHTTPServer`.
 
 ## Installation
 
-`cargo install simplewebserver` TODO
+Linux x64 binaries are available in GitHub Releases. More sophisticated packaging coming soon.
+
+If you have a functional Rust installation, simplewebserver can be installed from crates.io:
+```
+cargo install simplewebserver
+```
+Make sure the install location `~/.cargo/bin/` is in your path. Rust installation with rustup does this automatically.
 
 ## Usage
 
@@ -24,9 +37,11 @@ FLAGS:
     -h, --help         Prints help information
     -r, --recursive    Serve directories recursively
     -V, --version      Prints version information
+    -v, --verbose      Print additional logging info
 
 OPTIONS:
-    -p, --port <port>    Bind to a port [default: 7878]
+    -a, --address <address>    Serve on IP address [default: 127.0.0.1]
+    -p, --port <port>          Bind to a port [default: 8080]
 
 ARGS:
     <FILE>...    The file(s) to serve

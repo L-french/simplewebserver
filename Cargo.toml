@@ -2,9 +2,11 @@
 name = "simplewebserver"
 description = "Run a tiny HTTP server from the command line"
 readme = "README.md"
+authors = ["Lynn French"]
 repository = "https://github.com/L-french/simplewebserver"
 license = "MIT"
 keywords = ["cli", "http", "web"]
+categories = ["command-line-utilities"]
 version = "0.1.0"
 edition = "2021"
 

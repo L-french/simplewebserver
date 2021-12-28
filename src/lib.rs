@@ -39,7 +39,7 @@ impl Config {
                     .short("p")
                     .long("port")
                     .help("Bind to a port")
-                    .default_value("7878"),
+                    .default_value("8080"),
             )
             .arg(
                 Arg::with_name("address")
