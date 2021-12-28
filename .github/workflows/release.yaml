@@ -1,5 +1,7 @@
 # original courtesy of https://github.com/marketplace/actions/rust-release-binary
 
+name: Packaging
+
 on:
   release:
     types: [created]
