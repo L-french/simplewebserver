@@ -1,5 +1,7 @@
 # simplewebserver
 
+[![CI](https://github.com/L-french/simplewebserver/actions/workflows/CI.yaml/badge.svg)](https://github.com/L-french/simplewebserver/actions/workflows/CI.yaml)
+
 A convenient, standalone web server in the style of Python's `SimpleHTTPServer`. 
 
 ![Example usage of simplewebserver](assets/example-1.gif "Example")
