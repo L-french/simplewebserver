@@ -9,17 +9,15 @@ A convenient, standalone web server in the style of Python's `SimpleHTTPServer`.
 ## Design Goals
 * **Simple**: Easy to use CLI, with good defaults and reasonable security
 * **Capable**: Multithreaded service and I/O powered by Tokio
-* **Tiny**: Minimal binary size, while still using mature libraries and upholding other goals
+* **Tiny**: Minimal binary size, while still using mature libraries and being standalone
 
 ## Installation
 
-Linux x64 binaries are available in GitHub Releases. More sophisticated packaging coming soon.
-
-If you have a functional Rust installation, simplewebserver can be installed from crates.io:
+If you have a functional Rust installation, the simplest way to install simplewebserver is from crates.io:
 ```
 cargo install simplewebserver
 ```
-Make sure the install location `~/.cargo/bin/` is in your path. Rust installation with rustup does this automatically.
+Binaries are available in GitHub Releases. They may be extracted and run directly.
 
 ## Usage
 
