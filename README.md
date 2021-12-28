@@ -2,9 +2,7 @@
 
 A convenient, standalone web server in the style of Python's `SimpleHTTPServer`. 
 
-<center>
 ![Example usage of simplewebserver](assets/example-1.gif "Example")
-</center>
 
 *Warning*: Like its Python cousin, simplewebserver is intended for development and local file sharing. It should not be used in production environments.
 
