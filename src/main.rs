@@ -11,7 +11,9 @@ use tokio::fs;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     // Initialize logger
-    let mut logger = flexi_logger::Logger::try_with_str("info")?.start()?;
+    let mut logger = flexi_logger::Logger::try_with_str("info")?
+        .use_utc()
+        .start()?;
 
     // Get CLI information
     let conf = Config::new();
@@ -26,8 +28,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     }
 
     // Adjust logger verbosity
-    // TODO: once the time crate fully resolves RUSTSEC-2020-0159 and
-    // restores normal features on unix, update flexi_logger and other crates using time
     let verbosity = match conf.verbose {
         true => "debug",
         false => "info",
